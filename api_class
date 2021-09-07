@@ -1,0 +1,301 @@
+<?php
+
+// php mailer function.[Start] :07-Apr-2021 (Ashish)
+$GLOBALS = array('bk'=>'');
+$bk='';
+if(file_exists('../PHPMailer/PHPMailerAutoload.php'))
+{
+	$bk='';
+	$GLOBALS = array('bk'=>'../');
+}
+else
+{
+	$bk='../../';
+	$GLOBALS = array('bk'=>'../../');
+}
+
+if(file_exists($bk.'PHPMailer/PHPMailerAutoload.php'))
+{
+	include_once($bk.'PHPMailer/PHPMailerAutoload.php');
+	// echo 12;
+	function SentMail($from_email, $email, $fullname='', $subject, $content, $attachments='',$bccEmails='',$ccEmails='')
+	{
+			$mail = new PHPMailer(true);
+			try
+			{
+				$mail->isSMTP();
+				$mail->Host ='smtp.gmail.com'; 
+				$mail->Port =587;
+				// $mail->Port =465;
+				// $mail->SMTPAuth = true;
+				$mail->SMTPAuth = true;
+				// $mail->SMTPSecure = false;
+				$mail->Username = '';
+				// $mail->Password = "SIsales@321";
+				$mail->Password = "";
+				$mail->SMTPSecure = 'tls';
+				$mail->SMTPDebug  = 0; 
+				
+				$mail->SetFrom($from_email,'demo');
+				if($email!='')
+				{
+				  $emailArr=explode(',',$email);
+				   if(count($emailArr))
+				   {
+					 foreach($emailArr as $e)
+					 {
+					 	if(!empty($e))
+					 	{
+					 		$mail->addAddress($e, $fullname);
+					 	}	 
+					 }   
+				   } 	
+				} 
+				$mail->WordWrap = 50;
+				$mail->isHTML(true);
+				 
+				$mail->Subject = $subject;
+				$mail->Body    = $content;
+			
+				if($ccEmails!='')
+				{
+				  $ccArr=explode(',',$ccEmails);
+				   if(count($ccArr))
+				   {
+					 foreach($ccArr as $cc)
+					 {
+					   if(!empty($cc))
+					 	{
+					 		$mail->AddCC($cc,'');
+					 	}	 
+					 }   
+				   } 	
+				}
+
+				if($bccEmails!='')
+				{
+				  $bccArr=explode(',',$bccEmails);
+				   if(count($bccArr))
+				   {
+					 foreach($bccArr as $bcc)
+					 {
+					   $mail->AddBCC($bcc,'');	 
+					 }   
+				   } 	
+				}
+
+				if($attachments!='')
+				{
+				  $attachmentsArr=explode('||',$attachments);
+				  if(count($attachmentsArr))
+				  {
+					foreach($attachmentsArr as $atr)
+					{
+					   $file_to_attach=	$atr;
+					   $file_to_attach_name=basename($file_to_attach);
+					   $mail->AddAttachment( $file_to_attach , $file_to_attach_name);
+					}  
+				  }	
+				}
+
+				if(!$mail->send()) {
+					return 0; 
+				  }
+				 else
+				  {
+				  	return 1;	
+				  }
+			}
+			catch (phpmailerException $e) 
+			{
+		       $e->errorMessage(); 
+			} 
+			catch (Exception $e) 
+			{
+	   			$e->getMessage(); 
+	   		}
+	}
+
+}
+// end php mailer
+
+
+class isales_api{
+	
+	
+	// added for find the dir : 07-Apr-2021
+	public $back_dir;
+
+	function __construct()
+	{
+		global $GLOBALS;
+		$this->back_dir=$GLOBALS['bk'];
+	}
+	/*
+		@author 		:  
+		@param 			: $method, $url, $data, $username, $password
+		@return			: 
+		@Description	: This function will return response data from an API using curl execution
+						  Where :
+								$method 				= POST / GET
+								$url					= The path of the API
+								$data					= to send the data in the form post format
+								$username & password	= Username & password (credintial ) to access an API
+								$result					= Result will fetch from the url and get result in json using rest API
+		@created Date	: 23-Mar-2020
+		@Modify Date	: 
+
+	*/  
+	function callRestAPI($method, $url, $data, $username, $password, $functionName = '', $fileName = ''){
+	   $curl 		= curl_init();
+	   $username 	= $username;
+	   $password 	= $password;
+
+	   switch ($method){
+		  case "POST":
+			 curl_setopt($curl, CURLOPT_POST, 1);
+			 if ($data)
+				curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+			 break;
+		  default:
+			 if ($data)
+				$url = sprintf("%s?%s", $url, http_build_query($data));
+	   }
+
+	  // OPTIONS:
+	   curl_setopt($curl, CURLOPT_URL, $url);
+	   curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type'=> 'application/json'));
+	   curl_setopt($curl, CURLOPT_USERNAME, $username);
+	   curl_setopt($curl, CURLOPT_PASSWORD, $password);
+	   curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+	   curl_setopt($curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+
+
+	   // EXECUTE CURL REQUEST AND RETURN THE DATA :
+	   $result = curl_exec($curl);
+	   $erro   = curl_error($curl);
+	   $info 	= curl_getinfo($curl);
+	   // print_r($result );
+	   // $this->apiCallLog($method, $url, $data, $result, $functionName, $fileName); 
+	   
+	   // print_r($info);
+	   if(!$result){
+	   	// die("Connection Failure..!");
+	   //	echo "send data without acknowledgment..!";
+	   }
+	   curl_close($curl);
+	   return $result;   
+	}
+ 
+
+	
+		
+	
+	
+	/*
+		@author 		: 
+		@param 			: $function, $value, $dafault
+		@Description	: This function will filter POST FORM data for the SQL injection security.
+		@created Date	: 23-Mar-2020		
+	*/
+	function getFilteredData($input)
+	{
+		return $this->my_array_map('strip_tags', $this->my_array_map('trim',$input));
+	}
+	
+	
+	
+	/*
+		@author 		: 
+		@param 			: $function, $value, $dafault
+		@Description	: This function will apply any function on the value 
+							The value could be a single or an array
+		@created Date	: 23-Mar-2020
+	*/
+	function my_array_map($function, $value, $dafault = true)
+	{
+		if(!is_array($value) && $dafault === true)
+		{
+			$result = $function($value);
+		}
+		else
+		{			
+			$result = array();
+			foreach ($value as $key => $val)
+			{
+				$result[$key] = (is_array($val) ? $this->my_array_map($function, $val, false) : $function($val));
+			}
+		}		
+		return $result;
+	}
+	
+	
+	
+	
+/*
+	@author 		: 
+	@param 			: $DATA
+	@return			: 
+	@Description	: This Function will create folder in which files will get created to store json data.
+	@created Date	: 23-Mar-2020
+	@Modify Date	: 
+
+*/  
+function createFileFolder($data, $post_filename = '') 
+{
+	date_default_timezone_set("Asia/Kolkata"); // Set default timezone for India.
+    $currentTimeinSeconds = time(); 
+    // converts the time in seconds to current date  
+   $currentDate			= date('Y-m-d', $currentTimeinSeconds); 
+   $currentTime			= date('H:i:s', $currentTimeinSeconds); 
+   $CURRENT_DATE		= date("Y-m-d H:i:s");
+
+	
+   $encodedString		= json_encode($data);
+
+   $configdir = "data_log/"; // Folder Name
+    if (!file_exists($configdir)) {
+        mkdir($configdir);
+        $configsrc      =  $configdir.'so_data'.'_'.$post_filename.'_'.$currentDate.'_'.$currentTime.'.json';
+        // echo $configsrc;
+        file_put_contents($configsrc,$encodedString);
+        chmod($configsrc, 0777);
+    } else {
+        $configsrc      = $configdir.'so_data'.'_'.$post_filename.'_'.$currentDate.'_'.$currentTime.'.json'; 
+         // echo $configsrc;
+        file_put_contents($configsrc,$encodedString);
+        chmod($configsrc, 0777);
+    }
+    // return result;
+}
+
+/*
+	@author 		:  
+	@param 			: $DATA
+	@return			: 
+	@Description	: This dunction will generate unique 24 digit number.
+	@created Date	: 23-Mar-2020
+	@Modify Date	: 
+
+*/  
+function GetUID($LICENSEID, $RecLocationFlag='')//function to get 24 digit unique
+{
+	$MicroSec   = gettimeofday();
+	$micsec     = $MicroSec['usec'];    // Microseconds
+	$len_micsecs  = strlen($micsec);    //Length Of Micro Seconds
+	$leadingzerocnt = 6-$len_micsecs; 
+	$leadingzero  = NULL;
+	for($i=1;$i<=$leadingzerocnt;$i++) { $leadingzero  .=  "0"; }
+	$micsec     = $leadingzero.$micsec;
+	$DateTimeStamp  =   gmdate("YmdHis").$micsec;
+	$UID  = $RecLocationFlag.$LICENSEID.$DateTimeStamp;
+	return $UID;
+}
+  // upload data fn ends here
+
+
+
+
+  
+  
+}
