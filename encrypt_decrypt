@@ -1,0 +1,54 @@
+
+function encrypt($key, $plaintext){
+    $iv = random_bytes(16);
+    $ciphertext = openssl_encrypt($plaintext, 'aes-256-cbc', $key, OPENSSL_RAW_DATA, $iv);
+    $ivCiphertext = $iv . $ciphertext;
+    $ivCiphertextB64 = base64_encode($ivCiphertext);
+    return $ivCiphertextB64;
+}
+
+function decrypt($key, $ivCiphertextB64){
+    $ivCiphertext  = base64_decode($ivCiphertextB64);
+    $iv = substr($ivCiphertext, 0, 16);
+    $ciphertext = substr($ivCiphertext, 16);
+    $decryptedData = openssl_decrypt($ciphertext, "aes-256-cbc", $key, OPENSSL_RAW_DATA, $iv); 
+    return $decryptedData;
+}
+
+
+// Test 1:
+$key = '01ash15h000000000000000000000000'; 
+$plaintext = '1asdad';
+$ivCiphertextB64 = encrypt($key, $plaintext);
+$decrypted = decrypt($key, $ivCiphertextB64);
+print("Test 1 - Ciphertext: " . $ivCiphertextB64 . PHP_EOL);
+print("Test 1 - Decrypted:  " . $decrypted . PHP_EOL);
+
+
+
+
+function encrypt($plaintext, $password) {
+    $method = "AES-256-CBC";
+    $key = hash('sha256', $password, true);
+    $iv = openssl_random_pseudo_bytes(16);
+
+    $ciphertext = openssl_encrypt($plaintext, $method, $key, OPENSSL_RAW_DATA, $iv);
+    $hash = hash_hmac('sha256', $ciphertext . $iv, $key, true);
+
+    return $iv . $hash . $ciphertext;
+}
+
+function decrypt($ivHashCiphertext, $password) {
+    $method = "AES-256-CBC";
+    $iv = substr($ivHashCiphertext, 0, 16);
+    $hash = substr($ivHashCiphertext, 16, 32);
+    $ciphertext = substr($ivHashCiphertext, 48);
+    $key = hash('sha256', $password, true);
+
+    if (!hash_equals(hash_hmac('sha256', $ciphertext . $iv, $key, true), $hash)) return null;
+
+    return openssl_decrypt($ciphertext, $method, $key, OPENSSL_RAW_DATA, $iv);
+}
+
+
+
