@@ -17,7 +17,7 @@ function decrypt($key, $ivCiphertextB64){
 
 
 // Test 1:
-$key = '01ash15h000000000000000000000000'; 
+$key = '00000000000000000000000000000000'; 
 $plaintext = '1asdad';
 $ivCiphertextB64 = encrypt($key, $plaintext);
 $decrypted = decrypt($key, $ivCiphertextB64);
